@@ -1,4 +1,4 @@
-(define-module (imi frp-standard)
+(define-module (imi frp utils)
   #:use-module (imi frp)
   #:export (current-time-b))
 

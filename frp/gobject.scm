@@ -1,4 +1,4 @@
-(define-module (imi frp-gobject)
+(define-module (imi frp gobject)
   #:use-module (imi frp)
   #:use-module (gnome glib)
   #:use-module (gnome gobject)
