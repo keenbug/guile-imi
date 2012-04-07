@@ -38,7 +38,8 @@
 (define *fps*          60) ;frames/sec
 
 (define *robot:speed*   2) ;fields/sec - field: 16x16 px rectangle
-(define *robot:px/sec* 30) ;px/sec
+(define *robot:px/sec*
+  (* *robot:speed* 16)) ;px/sec
 
 
 (define *bin-dir* (dirname (car (command-line))))
@@ -136,7 +137,7 @@
   
 
 
-(define (getcairo)
+(define (get-world-cairo)
   (gdk-cairo-create (get world-canvas 'window)))
 
 
@@ -173,7 +174,7 @@
   (assq-ref *motion-keys*
             (gdk-event-key:keyval ev)))
 
-(define (motionkeyfilter ev)
+(define (motionkey? ev)
   (assq (gdk-event-key:keyval ev)
         *motion-keys*))
 
@@ -197,8 +198,8 @@
 (define keyrelease (gobject-event win 'key-release-event))
 (define expose (gobject-event world-canvas 'expose-event))
 
-(define motionkeypress (event-filter motionkeyfilter keypress))
-(define motionkeyrelease (event-filter motionkeyfilter keyrelease))
+(define motionkeypress (event-filter motionkey? keypress))
+(define motionkeyrelease (event-filter motionkey? keyrelease))
 
 (define keyspressed
   (event-fold (lambda (ev pressed-keys)
@@ -261,14 +262,14 @@
 
 (behavior-use robot-state
               (lambda (state)
-                (apply draw-robot (getcairo) state)))
+                (apply draw-robot (get-world-cairo) state)))
 
 
 (define redraw-event (event-map second (event-snapshot expose robot-state)))
 
 (event-use redraw-event
            (lambda (robot:state)
-             (draw-world (getcairo) robot:state)))
+             (draw-world (get-world-cairo) robot:state)))
 
 
 ;;;
