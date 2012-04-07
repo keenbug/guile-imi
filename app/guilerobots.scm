@@ -12,50 +12,26 @@
              (gnome gtk)
              (gnome gtk gdk-event))
 
-;;;
-;;; Some Utilities
-;;;
-
-(define (simple-assoc key value . rest)
-  (if (null? rest)
-      (list (cons key value))
-      (cons (cons key value)
-            (apply simple-assoc rest))))
-
-
-(define (integer x)
-  (inexact->exact (round x)))
+;;; I assume that this file is in the imi libs,
+;;; otherwise they need to be added to the load
+;;; path by hand
+(eval-when (compile eval)
+  (add-to-load-path
+    (string-append
+      (dirname (car (command-line)))
+      "/../../")))
 
 
-(eval-when (eval compile)
-  (define (remove-empty ls)
-    (filter (lambda (str)
-              (> (string-length str) 0))
-            ls))
+;;; now i should be able to load the imi libs
+(use-modules (imi frp)
+             (imi frp gobject)
+             (imi gnome gtk simple))
 
-  (define (resolve-path path)
-    (if (and (not (string=? path ""))
-             (char=? #\/ (string-ref path 0)))
-        path
-        (let ((cwd (remove-empty (string-split (getcwd) #\/)))
-              (path (remove-empty (string-split path #\/))))
-          (string-append
-            "/"
-            (string-join
-              (reverse
-                (fold (lambda (dir abspath)
-                        (cond
-                          ((string=? dir ".") abspath)
-                          ((string=? dir "..") (cdr abspath))
-                          (else (cons dir abspath))))
-                      (reverse cwd)
-                      path))
-              "/")))))
-  )
+
 
 
 ;;;
-;;; Some Settings
+;;; Settings
 ;;;
 
 
@@ -69,27 +45,6 @@
 (define *data-dir* (in-vicinity *bin-dir* "guilerobots/"))
 (define *pictdir* (in-vicinity *data-dir* "xpm/"))
 
-
-;;; search for the imi libs
-(eval-when (eval compile)
-  (let ((absolute-load-path (map resolve-path %load-path)))
-    (unless (any (lambda (dir)
-                   (any (lambda (file)
-                          (string=? file "imi"))
-                        (scandir dir)))
-                 absolute-load-path)
-      (add-to-load-path
-        (resolve-path
-          (string-append
-            (dirname (car (command-line)))
-            "/../../")))))
-  )
-
-
-;;; now i should be able to load them
-(use-modules (imi frp)
-             (imi frp gobject)
-             (imi gnome gtk simple))
 
 
 
@@ -114,6 +69,24 @@
            #f))
 
 (gtk-widget-show-all win)
+
+
+
+
+
+;;;
+;;; Some Utilities
+;;;
+
+(define (simple-assoc key value . rest)
+  (if (null? rest)
+      (list (cons key value))
+      (cons (cons key value)
+            (apply simple-assoc rest))))
+
+
+(define (integer x)
+  (inexact->exact (round x)))
 
 
 
