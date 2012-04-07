@@ -313,8 +313,9 @@
 
 (set-slot statusbar 'label
           (behavior-process
-            (lambda (moving position)
-              (format #f "moving: ~s position: ~s" moving position))
+            (lambda (pressed moving position)
+              (format #f "pressed: ~s moving: ~s position: ~s" pressed moving position))
+            keypressed
             current-move
             robot-position))
 
