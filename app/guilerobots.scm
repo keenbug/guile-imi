@@ -59,8 +59,8 @@
 
 (define win
   (container (gtk-window-new)
-    (vbox
-      world-canvas
+    (vbox #f #f
+      #:fill world-canvas
       statusbar)))
 
 
