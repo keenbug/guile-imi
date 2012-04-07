@@ -123,40 +123,22 @@
     ((left)  img:robot-west)
     (else    img:robot)))
 
+
+
+
 (define (draw-robot cr movement x y oldx oldy)
   (let ((img (get-robot-picture movement)))
-    (cairo-set-source-rgb cr 1 1 1)
-    (cairo-rectangle cr oldx oldy 16 16)
-    (cairo-fill cr)
-    (redraw-box-grid cr oldx oldy)
+    (redraw-box-world cr oldx oldy)
     (gdk-cairo-set-source-pixbuf cr img x y)
     (cairo-paint cr)))
 
 
-(define (draw-world cr rob:state)
-  (receive (width height) (gdk-drawable-get-size (get world-canvas 'window))
-    (cairo-set-source-rgb cr 1 1 1)
-    (cairo-rectangle cr 0 0 width height)
-    (cairo-fill cr)
-    (cairo-paint cr)
-    (draw-world-grid cr width height)
-    (apply draw-robot cr rob:state)))
 
-(define (draw-world-grid cr width height)
-  (cairo-set-source-rgb cr 0.7 0.7 0.7)
-  (cairo-set-line-cap cr 'butt)
-  (cairo-set-line-width cr 1)
-  (do-ec (:range x 0 width 16)
-         (draw-line cr x 0 x height))
-  (do-ec (:range y 0 height 16)
-         (draw-line cr 0 y width y)))
+(define (redraw-box-world cr x y)
+  (cairo-set-source-rgb cr 1 1 1)
+  (cairo-rectangle cr x y 16 16)
+  (cairo-fill cr)
 
-(define (draw-line cr x0 y0 x1 y1)
-  (cairo-move-to cr (+ .5 x0) (+ .5 y0))
-  (cairo-line-to cr (+ .5 x1) (+ .5 y1))
-  (cairo-stroke cr))
-
-(define (redraw-box-grid cr x y)
   (cairo-set-source-rgb cr .7 .7 .7)
   (cairo-set-line-cap cr 'square)
   (cairo-set-line-width cr 1)
@@ -172,6 +154,37 @@
         (draw-line cr x line-y (+ 16 x) line-y))))
 
 
+(define (draw-world-grid cr width height)
+  (cairo-set-source-rgb cr 0.7 0.7 0.7)
+  (cairo-set-line-cap cr 'butt)
+  (cairo-set-line-width cr 1)
+  (do-ec (:range x 0 width 16)
+         (draw-line cr x 0 x height))
+  (do-ec (:range y 0 height 16)
+         (draw-line cr 0 y width y)))
+
+
+
+(define (draw-world cr rob:state)
+  (receive (width height) (gdk-drawable-get-size (get world-canvas 'window))
+    (cairo-set-source-rgb cr 1 1 1)
+    (cairo-rectangle cr 0 0 width height)
+    (cairo-fill cr)
+    (cairo-paint cr)
+    (draw-world-grid cr width height)
+    (apply draw-robot cr rob:state)))
+
+
+
+;;; automatically adds an offset when drawing
+;;; so the lines are on the pixels and not 
+;;; between (important for 1px width lines)
+(define (draw-line cr x0 y0 x1 y1)
+  (cairo-move-to cr (+ .5 x0) (+ .5 y0))
+  (cairo-line-to cr (+ .5 x1) (+ .5 y1))
+  (cairo-stroke cr))
+
+
 (define (get-world-cairo)
   (gdk-cairo-create (get world-canvas 'window)))
 
@@ -182,6 +195,10 @@
 ;;; Event utilities
 ;;;
 
+;;; keeps track of the last N states of b,
+;;; where N is the length of inits and the
+;;; initial trace is inits. The trace is a
+;;; list of the last states.
 (define (behavior-trace b . inits)
   (let ((n (length inits)))
     (behavior-integrate
@@ -317,8 +334,8 @@
 (behavior-use robot-position-trace
               (lambda (positions)
                 (let ((bounded (map position-bounded? positions)))
-                  (unless (eq? (first bounded)
-                               (second bounded))
+                  (when (not (eq? (first bounded)
+                                  (second bounded)))
                     (event-trigger on-bounds-event (first bounded))))))
 
 
