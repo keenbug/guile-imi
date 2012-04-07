@@ -123,8 +123,7 @@
     (cairo-rectangle cr oldx oldy 16 16)
     (cairo-fill cr)
     (gdk-cairo-set-source-pixbuf cr img x y)
-    (cairo-paint cr)
-    (cairo-stroke cr)))
+    (cairo-paint cr)))
 
 
 (define (draw-world cr rob:state)
