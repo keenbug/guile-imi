@@ -185,7 +185,7 @@
 ;;;  fps new, now tick, so in the end speed will almost
 ;;;  be achieved
 (define *step* (max 1 (floor (/ *robot:px/sec* *fps*)))) ; per tick stepsize
-(define *sps*  (ceiling (/ *robot:px/sec* *step*)))      ; recalculate steps/sec
+(define *sps*  (/ *robot:px/sec* *step*))                ; recalculate steps/sec
 (define *tick* (integer (/ 1000 *sps*)))                 ; steps/sec -> msec/step
 
 
