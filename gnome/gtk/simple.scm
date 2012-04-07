@@ -1,6 +1,7 @@
 (define-module (imi gnome gtk simple)
   #:use-module (oop goops)
   #:use-module (gnome gtk)
+  #:use-module (srfi srfi-1)
   #:export (container container*
             hbox hbox* vbox vbox*
             label label*
@@ -33,21 +34,54 @@
   (widget sth))
 
 
-(define (vbox . widgets) (vbox* widgets))
-(define (vbox* widgets)
-  (container* (gtk-vbox-new) widgets))
 
 
-(define (hbox . widgets) (hbox* widgets))
-(define (hbox* widgets)
-  (container* (gtk-hbox-new) widgets))
+(define (box* box std-exp std-fill widgets)
+  (if (null? widgets)
+      box
+      (case (car widgets)
+        ((#:expand)
+         (if (null? (cdr widgets))
+             (error "box*: missing argument to #:expand")
+             (begin (gtk-box-pack-start box (widget (cadr widgets)) #t #f 0)
+                    (box* box std-exp std-fill (cddr widgets)))))
+        ((#:fill)
+         (if (null? (cdr widgets))
+             (error "box*: missing argument to #:fill")
+             (begin (gtk-box-pack-start box (widget (cadr widgets)) #t #t 0)
+                    (box* box std-exp std-fill (cddr widgets)))))
+        ((#:noexpand)
+         (if (null? (cdr widgets))
+             (error "box*: missing argument to #:noexpand")
+             (begin (gtk-box-pack-start box (widget (cadr widgets)) #f #f 0)
+                    (box* box std-exp std-fill (cddr widgets)))))
+        ((#:nofill)
+         (if (null? (cdr widgets))
+             (error "box*: missing argument to #:nofill")
+             (begin (gtk-box-pack-start box (widget (cadr widgets)) #t #f 0)
+                    (box* box std-exp std-fill (cddr widgets)))))
+        (else
+         (gtk-box-pack-start box (widget (car widgets)) std-exp std-fill 0)
+         (box* box std-exp std-fill (cdr widgets))))))
+
+
+(define (vbox stdexp stdfill . widgets) (vbox* stdexp stdfill widgets))
+(define (vbox* stdexp stdfill widgets)
+  (box* (gtk-vbox-new) stdexp stdfill widgets))
+
+
+(define (hbox stdexp stdfill . widgets) (hbox* stdexp stdfill widgets))
+(define (hbox* stdexp stdfill widgets)
+  (box* (gtk-hbox-new) stdexp stdfill widgets))
 
 (define (label text . widgets)
   (label* text widgets))
 
 (define (label* text widgets)
-  (hbox* (cons (gtk-label-new text)
-               widgets)))
+  (hbox* #t #t (cons* #:noexpand (gtk-label-new text)
+                      widgets)))
+
+
 
 
 (define (table homogeneous? . rows)
