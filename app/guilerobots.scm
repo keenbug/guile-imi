@@ -211,43 +211,36 @@
 (define motionkeypress (event-filter motionkey? keypress))
 (define motionkeyrelease (event-filter motionkey? keyrelease))
 
-(define keyspressed
-  (event-fold (lambda (ev pressed-keys)
+(define keypressed
+  (event-fold (lambda (ev pressed-key)
                 (let ((event-key (key-event->direction-symbol ev)))
                   (case (gdk-event:type ev)
-                    ((key-press)
-                     (if (not (memq event-key pressed-keys))
-                         (cons event-key pressed-keys)
-                         pressed-keys))
+                    ((key-press) event-key)
                     ((key-release)
-                     (filter (lambda (key)
-                               (not (eq? event-key key)))
-                             pressed-keys))
+                     (if (eq? event-key pressed-key)
+                         #f
+                         pressed-key))
                     (else pressed-keys))))
-              (list)
+              #f
               (event-merge motionkeypress motionkeyrelease)))
 
 (define move-tick
-  (event-mask (behavior-process pair? keyspressed)
-              refresh-tick))
+  (event-mask keypressed refresh-tick))
 
 (define move-event
-  (event-map second (event-snapshot move-tick keyspressed)))
+  (event-map second (event-snapshot move-tick keypressed)))
 
 (define start-position (cons 20 20))
 (define robot-position
-  (event-fold (lambda (directions pos)
-                (fold (lambda (dir pos)
-                        (pmatch pos
-                          ((,x . ,y)
-                           (case dir
-                             ((up)    (cons x (step- y)))
-                             ((down)  (cons x (step+ y)))
-                             ((left)  (cons (step- x) y))
-                             ((right) (cons (step+ x) y))
-                             (else pos)))))
-                      pos
-                      directions))
+  (event-fold (lambda (direction pos)
+                (pmatch pos
+                  ((,x . ,y)
+                   (case direction
+                     ((up)    (cons x (step- y)))
+                     ((down)  (cons x (step+ y)))
+                     ((left)  (cons (step- x) y))
+                     ((right) (cons (step+ x) y))
+                     (else pos)))))
               start-position
               move-event))
 
@@ -255,19 +248,18 @@
           (behavior-process
             (lambda (moving position)
               (format #f "moving: ~s position: ~s" moving position))
-            keyspressed
+            keypressed
             robot-position))
 
 
 (define robot-state
-  (behavior-process (lambda (pos keyspressed)
+  (behavior-process (lambda (pos direction)
                       (pmatch pos 
                         (((,x . ,y) (,oldx . ,oldy))
-                         (cons (and (not (null? keyspressed))
-                                    (car keyspressed))
+                         (cons direction
                                (list x y oldx oldy)))))
                     (behavior-trace robot-position start-position)
-                    keyspressed))
+                    keypressed))
 
 
 (behavior-use robot-state
