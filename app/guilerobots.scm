@@ -167,7 +167,18 @@
   (simple-assoc gdk:Up    'up
                 gdk:Down  'down
                 gdk:Left  'left
-                gdk:Right 'right))
+                gdk:Right 'right
+
+                gdk:w 'up
+                gdk:a 'left
+                gdk:s 'down
+                gdk:d 'right
+
+                gdk:h 'left
+                gdk:j 'down
+                gdk:k 'up
+                gdk:l 'right
+                ))
 
 (define (key-event->direction-symbol ev)
   (assq-ref *motion-keys*
