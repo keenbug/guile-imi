@@ -90,6 +90,11 @@
   (inexact->exact (round x)))
 
 
+(define (position-bounded? pos)
+  (and (zero? (modulo (car pos) 16))
+       (zero? (modulo (cdr pos) 16))))
+
+
 
 
 ;;;
@@ -220,17 +225,31 @@
                      (if (eq? event-key pressed-key)
                          #f
                          pressed-key))
-                    (else pressed-keys))))
+                    (else pressed-key))))
               #f
               (event-merge motionkeypress motionkeyrelease)))
 
+(define on-bounds-event (make-event))
+(define on-bounds (event-hold on-bounds-event #t))
+
+(define current-move
+  (behavior-integrate
+    (lambda (bounds/key current-move)
+      (pmatch bounds/key
+        ((,on-bounds? ,pressed-key)
+         (if on-bounds?
+             pressed-key
+             current-move))))
+    #f
+    (behavior-process list on-bounds keypressed)))
+
 (define move-tick
-  (event-mask keypressed refresh-tick))
+  (event-mask current-move refresh-tick))
 
 (define move-event
-  (event-map second (event-snapshot move-tick keypressed)))
+  (event-map second (event-snapshot move-tick current-move)))
 
-(define start-position (cons 20 20))
+(define start-position (cons 0 0))
 (define robot-position
   (event-fold (lambda (direction pos)
                 (pmatch pos
@@ -248,9 +267,12 @@
           (behavior-process
             (lambda (moving position)
               (format #f "moving: ~s position: ~s" moving position))
-            keypressed
+            current-move
             robot-position))
 
+
+(define robot-position-trace
+  (behavior-trace robot-position start-position))
 
 (define robot-state
   (behavior-process (lambda (pos direction)
@@ -258,8 +280,15 @@
                         (((,x . ,y) (,oldx . ,oldy))
                          (cons direction
                                (list x y oldx oldy)))))
-                    (behavior-trace robot-position start-position)
-                    keypressed))
+                    robot-position-trace
+                    current-move))
+
+(behavior-use robot-position-trace
+              (lambda (positions)
+                (let ((bounded (map position-bounded? positions)))
+                  (unless (eq? (first bounded)
+                               (second bounded))
+                    (event-trigger on-bounds-event (first bounded))))))
 
 
 (behavior-use robot-state
