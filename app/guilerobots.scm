@@ -95,6 +95,14 @@
   (and (zero? (modulo (car pos) 16))
        (zero? (modulo (cdr pos) 16))))
 
+(define (stick-down bounds x)
+  (- x (modulo x bounds)))
+
+(define (stick-up bounds x)
+  (let ((mod (modulo x bounds)))
+    (if (zero? mod)
+        x
+        (- (+ x bounds) mod))))
 
 
 
@@ -142,16 +150,12 @@
   (cairo-set-source-rgb cr .7 .7 .7)
   (cairo-set-line-cap cr 'square)
   (cairo-set-line-width cr 1)
-  (if (zero? (modulo x 16))
-      (do-ec (:range x x (+ 32 x) 16)
-             (draw-line cr x y x (+ 16 y)))
-      (let ((line-x (+ x (- 16 (modulo x 16)))))
-        (draw-line cr line-x y line-x (+ 16 y))))
-  (if (zero? (modulo y 16))
-      (do-ec (:range y y (+ 32 y) 16)
-             (draw-line cr x y (+ 16 x) y))
-      (let ((line-y (+ y (- 16 (modulo y 16)))))
-        (draw-line cr x line-y (+ 16 x) line-y))))
+  (let ((stick-x (stick-up 16 x))
+        (stick-y (stick-up 16 y)))
+    (do-ec (:range x stick-x (+ 17 stick-x) 16)
+           (draw-line cr x y x (+ 16 y)))
+    (do-ec (:range y stick-y (+ 17 stick-y) 16)
+           (draw-line cr x y (+ 16 x) y))))
 
 
 (define (draw-world-grid cr width height)
